@@ -2,6 +2,7 @@ PRAGMA journal_mode=WAL;
 CREATE TABLE countries (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE,
+    url_tail TEXT UNIQUE NOT NULL,
     iso_code TEXT UNIQUE
 );
 CREATE TABLE cities (

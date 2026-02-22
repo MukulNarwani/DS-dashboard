@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup 
 import requests
 from rich.pretty import pprint
+import db
 
 
 class NumbeoScraper:
@@ -88,6 +89,7 @@ class Country:
         self.create_scraper()
         self.get_currency()
         self.get_cost_table()
+        self.db = CostOfLivingRepository(Database().initialize())
     
     def create_scraper(self):
         self.scraper = NumbeoScraper(self.url_tail)
@@ -99,6 +101,13 @@ class Country:
     def convert_to_dollar(self, price):
     # TODO: need to use logic to convert (and save?) in USD
         raise NotImplementedError
+    def save(self):
+        # Save location
+        # Save item
+
+        
+
+
 
 
 
