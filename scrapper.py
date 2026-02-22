@@ -8,7 +8,7 @@ class NumbeoScraper:
     def __init__(self, url_tail):
         self.soup = self.get_html(url_tail)
         self.CoLScraper = CoLScraper(self.soup)
-        get_currency()
+        self.get_currency()
 
     def  get_html(self, url_tail)->BeautifulSoup:
         url = f'{self.BASE_URL}/{url_tail}'
@@ -55,21 +55,27 @@ class CoLScraper:
     def process_category_row(self,child):
         title= child.div.text
         return title
-    
+
+    def convert_to_int(self, int_string):
+        # rm newline char and limit precision to int
+        tmp = int_string.replace("\n","").replace(",","").split('.')[0]
+        print(tmp)
+        return int(tmp)
+
     def process_item_row(self, child):
+        print('new row')
         left_bar_child = child.find("span",{"class":"barTextLeft"})
-        right_bar_child = child.find("span",{"class":"barTextLeft"})
+        right_bar_child = child.find("span",{"class":"barTextRight"})
+
         if left_bar_child and right_bar_child:
-            left_bar_child = left_bar_child.text
-            right_bar_child = right_bar_child.text
-        # print(child)
+            left_bar_child = self.convert_to_int(left_bar_child.text)
+            right_bar_child = self.convert_to_int(right_bar_child.text)
+
         item = child.td.text
-        price = child.span.text
-        # limit precision to int
+        price = self.convert_to_int(child.span.text)
         # NOTE: some EU countries switch , and .
         # TODO: could be made faster by using regex
-        price = price.split('.')[0].replace(",","")
-        return (item,int(price))
+        return (item,price, (left_bar_child,right_bar_child))
 
 
 
