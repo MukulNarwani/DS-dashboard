@@ -1,29 +1,29 @@
 PRAGMA journal_mode=WAL;
-CREATE TABLE countries (
+CREATE TABLE IF NOT EXISTS countries (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE,
     url_tail TEXT UNIQUE NOT NULL,
     iso_code TEXT UNIQUE
 );
-CREATE TABLE cities (
+CREATE TABLE IF NOT EXISTS cities (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     country_id INTEGER NOT NULL,
     UNIQUE(name, country_id),
     FOREIGN KEY (country_id) REFERENCES countries(id)
 );
-CREATE TABLE categories (
+CREATE TABLE IF NOT EXISTS categories (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE
 );
-CREATE TABLE items (
+CREATE TABLE IF NOT EXISTS items (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     category_id INTEGER NOT NULL,
     UNIQUE(name, category_id),
     FOREIGN KEY (category_id) REFERENCES categories(id)
 );
-CREATE TABLE cost_observations (
+CREATE TABLE IF NOT EXISTS cost_observations (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     city_id INTEGER NOT NULL,
     item_id INTEGER NOT NULL,
@@ -32,9 +32,9 @@ CREATE TABLE cost_observations (
     price_max REAL,
     currency TEXT NOT NULL,
     sample_size INTEGER,
-    scraped_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    -- scraped_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     data_last_updated TIMESTAMP,
-    UNIQUE(city_id, item_id, scraped_at),
+    UNIQUE(city_id, item_id ),
     FOREIGN KEY (city_id) REFERENCES cities(id),
     FOREIGN KEY (item_id) REFERENCES items(id)
 );

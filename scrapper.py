@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup 
 import requests
 from rich.pretty import pprint
-import db
+from db import *
 
 
 class NumbeoScraper:
@@ -9,7 +9,8 @@ class NumbeoScraper:
     def __init__(self, url_tail):
         self.soup = self.get_html(url_tail)
         self.CoLScraper = CoLScraper(self.soup)
-        self.get_currency()
+        self.currency = self.get_currency()
+        # print(self.soup)
 
     def  get_html(self, url_tail)->BeautifulSoup:
         url = f'{self.BASE_URL}/{url_tail}'
@@ -19,7 +20,7 @@ class NumbeoScraper:
         return BeautifulSoup(req.content, "html.parser")
 
     def get_currency(self):
-        self.currency = self.soup.find(id="displayCurrency").find(selected="selected").text
+        return self.soup.find(id="displayCurrency").find(selected="selected").text
 
     def scrape_costs(self):
         return self.CoLScraper.get_cost_table()
@@ -35,14 +36,14 @@ class CoLScraper:
     def get_cost_table(self)->dict[str:list]:
         data = self.soup
         table = data.find("table",{"class":"data_wide_table"})
-        category = {}
+        categories = {}
         item_list = []
         category_title=None
 
         for i,child in enumerate(table.find_all('tr')):
             if child.has_attr('class') and child['class']==['break_category']:
                 assert category_title != None, "category_title cannot be None"
-                category[category_title] = item_list
+                categories[category_title] = item_list
                 # Reset accumulators
                 category_title = None
                 item_list = []
@@ -51,7 +52,7 @@ class CoLScraper:
                 category_title = self.process_category_row(child)
             if child.contents[0].name == "td":
                 item_list.append(self.process_item_row(child))
-        return category
+        return categories
 
     def process_category_row(self,child):
         title= child.div.text
@@ -59,12 +60,12 @@ class CoLScraper:
 
     def convert_to_int(self, int_string):
         # rm newline char and limit precision to int
+        # TODO: could be made faster by using regex
+        # NOTE: some EU countries switch , and .
         tmp = int_string.replace("\n","").replace(",","").split('.')[0]
-        print(tmp)
         return int(tmp)
 
     def process_item_row(self, child):
-        print('new row')
         left_bar_child = child.find("span",{"class":"barTextLeft"})
         right_bar_child = child.find("span",{"class":"barTextRight"})
 
@@ -74,16 +75,15 @@ class CoLScraper:
 
         item = child.td.text
         price = self.convert_to_int(child.span.text)
-        # NOTE: some EU countries switch , and .
-        # TODO: could be made faster by using regex
         return (item,price, (left_bar_child,right_bar_child))
 
 
 
 
-class Country:
-    def __init__(self,title,url_tail):
-        self.title = title
+class City:
+    def __init__(self,country,city,url_tail):
+        self.country = country
+        self.city = city
         self.url_tail = url_tail
         self.currency = None
         self.create_scraper()
@@ -97,13 +97,32 @@ class Country:
         self.currency = self.scraper.get_currency()
     def get_cost_table(self):
         self.cost_table = self.scraper.scrape_costs()
-        pprint(self.cost_table)
     def convert_to_dollar(self, price):
     # TODO: need to use logic to convert (and save?) in USD
         raise NotImplementedError
+
     def save(self):
         # Save location
         # Save item
+        country_id, city_id = self.db.upsert_location(
+        city_name=self.city,
+        country_name=self.country,  # update if you track country separately
+        url_tail=self.url_tail
+        )
+        for category, items in self.cost_table.items():
+            for (item_name, price, (price_min, price_max)) in items:
+                item_id = self.db.upsert_item(item_name, category)
+                self.db.upsert_observation(
+                    city_id=city_id,
+                    item_id=item_id,
+                    price_avg=price,
+                    currency=self.currency,
+                    price_min=price_min,
+                    price_max=price_max
+                )
+    def read(self):
+        print(self.db.get_latest_city_data(self.city))
+        
 
         
 
@@ -113,5 +132,6 @@ class Country:
 
 
 if __name__ == "__main__":
-    country = Country('Boston','Boston')
-    print(country.currency)
+    city = City('United States','Boston','Boston')
+    print(city.currency)
+    city.read()
