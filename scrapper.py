@@ -2,7 +2,7 @@ from bs4 import BeautifulSoup
 import requests
 from rich.pretty import pprint
 from db import *
-
+from itertools import groupby
 
 class NumbeoScraper:
     BASE_URL="https://www.numbeo.com/cost-of-living/in"
@@ -81,15 +81,15 @@ class CoLScraper:
 
 
 class City:
-    def __init__(self,country,city,url_tail):
+    def __init__(self,country,city,url_tail,db):
         self.country = country
         self.city = city
         self.url_tail = url_tail
         self.currency = None
+        self.db = db
         self.create_scraper()
         self.get_currency()
         self.get_cost_table()
-        self.db = CostOfLivingRepository(Database().initialize())
     
     def create_scraper(self):
         self.scraper = NumbeoScraper(self.url_tail)
@@ -121,7 +121,11 @@ class City:
                     price_max=price_max
                 )
     def read(self):
-        print(self.db.get_latest_city_data(self.city))
+        data = self.db.get_latest_city_data(self.city)
+        grouped = {}
+        for row in data:
+            grouped.setdefault(row["category"], []).append(row)
+        pprint(grouped.keys())
         
 
         
@@ -132,6 +136,8 @@ class City:
 
 
 if __name__ == "__main__":
-    city = City('United States','Boston','Boston')
+    db = CostOfLivingRepository(Database().initialize())
+    city = City('United Kingdom','London','London',db)
     print(city.currency)
+    city.save()
     city.read()
