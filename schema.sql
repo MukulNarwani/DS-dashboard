@@ -38,3 +38,67 @@ CREATE TABLE IF NOT EXISTS cost_observations (
     FOREIGN KEY (city_id) REFERENCES cities(id),
     FOREIGN KEY (item_id) REFERENCES items(id)
 );
+-- JOB TABLES --
+-- FX rates for normalisation
+CREATE TABLE IF NOT EXISTS fx_rates (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    date          TEXT NOT NULL,
+    currency_from TEXT NOT NULL,
+    rate_to_usd   REAL NOT NULL,
+    UNIQUE(date, currency_from)
+);
+
+-- Canonical role taxonomy
+CREATE TABLE IF NOT EXISTS role_categories (
+    id   INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE  -- ml_engineer, data_scientist, etc.
+);
+
+-- Individual job postings from JobSpy
+CREATE TABLE IF NOT EXISTS job_postings (
+    id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+    snapshot_date        TEXT NOT NULL,          -- ISO date of collection run
+    source               TEXT NOT NULL,          -- 'indeed'
+    source_job_id        TEXT,                   -- platform's own ID
+    raw_title            TEXT NOT NULL,
+    role_category_id     INTEGER REFERENCES role_categories(id),
+    company              TEXT,
+    location_city        TEXT,
+    location_country     TEXT,
+    city_id              INTEGER REFERENCES cities(id),  -- FK to CoL cities where matched
+    is_remote            INTEGER DEFAULT 0,
+    salary_min_raw       REAL,
+    salary_max_raw       REAL,
+    salary_currency      TEXT,
+    salary_interval      TEXT,                   -- hourly/weekly/monthly/yearly
+    salary_source        TEXT,                   -- 'field' / 'description' / null
+    date_posted          TEXT,
+    job_url              TEXT,
+    first_seen_date      TEXT NOT NULL,
+    last_seen_date       TEXT NOT NULL,
+    UNIQUE(source, source_job_id)                -- dedup anchor
+);
+-- Aggregate salary benchmarks (Track 2 - future)
+CREATE TABLE IF NOT EXISTS salary_benchmarks (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    snapshot_date    TEXT NOT NULL,
+    role_category_id INTEGER REFERENCES role_categories(id),
+    location_country TEXT NOT NULL,
+    location_city    TEXT,
+    salary_p25_usd   REAL,
+    salary_p50_usd   REAL,
+    salary_p75_usd   REAL,
+    sample_size      INTEGER,
+    source           TEXT,
+    UNIQUE(snapshot_date, role_category_id, location_country, location_city)
+);
+CREATE TABLE IF NOT EXISTS ppp_factors (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    country_name TEXT NOT NULL,
+    iso_code     TEXT NOT NULL,
+    year         INTEGER NOT NULL,
+    factor       REAL NOT NULL,  -- local currency units per 1 PPP USD
+    source       TEXT DEFAULT 'world_bank',
+    UNIQUE(iso_code, year)
+);
+

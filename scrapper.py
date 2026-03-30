@@ -3,6 +3,7 @@ import requests
 from rich.pretty import pprint
 from db import *
 from itertools import groupby
+from fx import get_fx_rate
 
 class NumbeoScraper:
     BASE_URL="https://www.numbeo.com/cost-of-living/in"
@@ -86,7 +87,8 @@ class City:
         self.city = city
         self.url_tail = url_tail
         self.currency = None
-        self.db = db
+        self.db = CostOfLivingRepository(db or Database().initialize())
+
         self.create_scraper()
         self.get_currency()
         self.get_cost_table()
@@ -100,6 +102,10 @@ class City:
     def convert_to_dollar(self, price):
     # TODO: need to use logic to convert (and save?) in USD
         raise NotImplementedError
+    
+    def convert_to_dollar(self, price: float, currency: str) -> Optional[float]:
+        rate = get_fx_rate(self.db.database, currency)
+        return round(price * rate, 2) if rate else None
 
     def save(self):
         # Save location
@@ -136,7 +142,7 @@ class City:
 
 
 if __name__ == "__main__":
-    db = CostOfLivingRepository(Database().initialize())
+    db = Database().initialize()
     city = City('United Kingdom','London','London',db)
     print(city.currency)
     city.save()
