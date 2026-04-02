@@ -1,5 +1,5 @@
 def calculate_salary_index():
-# TODO salarayindex = median ds salary/cost of living 
+# TODO salarayindex = ppp adjusted median ds salary/cost of living 
 pass
 
 def weighted_city_desirability_score():
@@ -17,4 +17,5 @@ def rent_sensitivity():
 # Median rent vs salary 
 pass
 
-def
+def effective_tax_burden():
+    pass

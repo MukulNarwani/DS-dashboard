@@ -78,19 +78,23 @@ CREATE TABLE IF NOT EXISTS job_postings (
     last_seen_date       TEXT NOT NULL,
     UNIQUE(source, source_job_id)                -- dedup anchor
 );
--- Aggregate salary benchmarks (Track 2 - future)
+-- Raw Glassdoor bootstrap salary benchmarks for the first dashboard version.
+-- This table intentionally stores local-currency values and scraped metadata.
 CREATE TABLE IF NOT EXISTS salary_benchmarks (
     id               INTEGER PRIMARY KEY AUTOINCREMENT,
-    snapshot_date    TEXT NOT NULL,
-    role_category_id INTEGER REFERENCES role_categories(id),
+    scraped_date     TEXT NOT NULL,
+    role_category    TEXT NOT NULL,
+    location_name    TEXT NOT NULL,
     location_country TEXT NOT NULL,
-    location_city    TEXT,
-    salary_p25_usd   REAL,
-    salary_p50_usd   REAL,
-    salary_p75_usd   REAL,
+    salary_median    REAL,
+    salary_p25       REAL,
+    salary_p75       REAL,
+    salary_p90       REAL,
+    currency         TEXT NOT NULL,
     sample_size      INTEGER,
-    source           TEXT,
-    UNIQUE(snapshot_date, role_category_id, location_country, location_city)
+    source           TEXT DEFAULT 'glassdoor',
+    scraped_url      TEXT,
+    UNIQUE(scraped_date, role_category, location_name)
 );
 CREATE TABLE IF NOT EXISTS ppp_factors (
     id           INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -101,4 +105,3 @@ CREATE TABLE IF NOT EXISTS ppp_factors (
     source       TEXT DEFAULT 'world_bank',
     UNIQUE(iso_code, year)
 );
-
