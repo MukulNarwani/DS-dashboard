@@ -1,5 +1,4 @@
 import sqlite3
-from pathlib import Path
 
 import pytest
 
@@ -11,10 +10,6 @@ from salary_scraper import (
     _is_valid_salary_page,
     _parse_salary_page,
 )
-
-
-def _repo_root() -> Path:
-    return Path(__file__).resolve().parents[1]
 
 
 def _location(currency: str, country: str, display_name: str) -> GlassdoorLocation:
@@ -29,8 +24,10 @@ def _location(currency: str, country: str, display_name: str) -> GlassdoorLocati
     )
 
 
-def test_repository_upsert_uses_initialized_schema(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.chdir(_repo_root())
+def test_repository_upsert_uses_initialized_schema(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
     database = Database(str(tmp_path / "salary.db")).initialize()
     repository = GlassdoorSalaryRepository(database)
     location = _location("GBP", "United Kingdom", "London")
@@ -43,7 +40,9 @@ def test_repository_upsert_uses_initialized_schema(tmp_path: Path, monkeypatch: 
         currency="GBP",
     )
 
-    repository.upsert("2026-04-02", "data_scientist", location, salary_data, "https://example.com")
+    repository.upsert(
+        "2026-04-02", "data_scientist", location, salary_data, "https://example.com"
+    )
 
     with database._get_connection() as connection:
         row = connection.execute(
@@ -63,8 +62,10 @@ def test_repository_upsert_uses_initialized_schema(tmp_path: Path, monkeypatch: 
     }
 
 
-def test_schema_requires_scraped_date_for_raw_benchmarks(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.chdir(_repo_root())
+def test_schema_requires_scraped_date_for_raw_benchmarks(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
     database = Database(str(tmp_path / "salary.db")).initialize()
 
     with database._get_connection() as connection:

@@ -10,13 +10,16 @@ class Database:
     def _get_connection(self) -> sqlite3.Connection:
         conn = sqlite3.connect(self.db_path)
         # conn.row_factory = sqlite3.Row
-        conn.row_factory = lambda cursor, row: dict(zip([col[0] for col in cursor.description], row))
+        conn.row_factory = lambda cursor, row: dict(
+            zip([col[0] for col in cursor.description], row)
+        )
         return conn
 
     def initialize(self) -> "Database":
         """Initialize database schema. Safe to call multiple times if schema uses IF NOT EXISTS."""
+        schema_path = Path(__file__).resolve().with_name("schema.sql")
         with self._get_connection() as conn:
-            with open("schema.sql", "r") as f:
+            with schema_path.open("r", encoding="utf-8") as f:
                 conn.executescript(f.read())
         return self
 
@@ -29,7 +32,13 @@ class CostOfLivingRepository:
     # Locations
     # ------------------------------------------------------------------
 
-    def upsert_location(self, city_name: str, country_name: str, url_tail: str, iso_code: Optional[str] = None) -> Tuple[int, int]:
+    def upsert_location(
+        self,
+        city_name: str,
+        country_name: str,
+        url_tail: str,
+        iso_code: Optional[str] = None,
+    ) -> Tuple[int, int]:
         """Insert or update a country + city. Returns (country_id, city_id)."""
         with self.database._get_connection() as conn:
             conn.execute(
@@ -94,7 +103,9 @@ class CostOfLivingRepository:
     # ------------------------------------------------------------------
     # Observations
     # ------------------------------------------------------------------
-    def upsert_observation(self, city_id, item_id, price_avg, currency, price_min=None, price_max=None):
+    def upsert_observation(
+        self, city_id, item_id, price_avg, currency, price_min=None, price_max=None
+    ):
         with self.database._get_connection() as conn:
             conn.execute(
                 """
@@ -105,8 +116,9 @@ class CostOfLivingRepository:
                     price_min = excluded.price_min,
                     price_max = excluded.price_max,
                     currency  = excluded.currency
-                """, (city_id, item_id, price_avg, price_min, price_max, currency))
-
+                """,
+                (city_id, item_id, price_avg, price_min, price_max, currency),
+            )
 
     # ------------------------------------------------------------------
     # Queries

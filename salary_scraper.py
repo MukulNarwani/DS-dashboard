@@ -40,14 +40,40 @@ class SalaryPageData:
 
 LOCATIONS: list[GlassdoorLocation] = [
     GlassdoorLocation("United States", "United States", "USD", "com", "", "", 0),
-    GlassdoorLocation("San Francisco", "United States", "USD", "com", "san-francisco-", "IL.0,13_IM759", 14),
-    GlassdoorLocation("New York City", "United States", "USD", "com", "new-york-city-", "IL.0,13_IM716", 14),
-    GlassdoorLocation("Boston", "United States", "USD", "com", "boston-", "IL.0,6_IM49", 7),
+    GlassdoorLocation(
+        "San Francisco",
+        "United States",
+        "USD",
+        "com",
+        "san-francisco-",
+        "IL.0,13_IM759",
+        14,
+    ),
+    GlassdoorLocation(
+        "New York City",
+        "United States",
+        "USD",
+        "com",
+        "new-york-city-",
+        "IL.0,13_IM716",
+        14,
+    ),
+    GlassdoorLocation(
+        "Boston", "United States", "USD", "com", "boston-", "IL.0,6_IM49", 7
+    ),
     GlassdoorLocation("United Kingdom", "United Kingdom", "GBP", "co.uk", "", "", 0),
-    GlassdoorLocation("London", "United Kingdom", "GBP", "co.uk", "london-", "IL.0,6_IM1035", 7),
-    GlassdoorLocation("Edinburgh", "United Kingdom", "GBP", "co.uk", "edinburgh-", "IL.0,9_IM1091", 10),
-    GlassdoorLocation("Melbourne", "Australia", "AUD", "com.au", "melbourne-", "IL.0,9_IM1139", 10),
-    GlassdoorLocation("Dubai", "United Arab Emirates", "AED", "com", "dubai-", "IL.0,5_IM1520", 6),
+    GlassdoorLocation(
+        "London", "United Kingdom", "GBP", "co.uk", "london-", "IL.0,6_IM1035", 7
+    ),
+    GlassdoorLocation(
+        "Edinburgh", "United Kingdom", "GBP", "co.uk", "edinburgh-", "IL.0,9_IM1091", 10
+    ),
+    GlassdoorLocation(
+        "Melbourne", "Australia", "AUD", "com.au", "melbourne-", "IL.0,9_IM1139", 10
+    ),
+    GlassdoorLocation(
+        "Dubai", "United Arab Emirates", "AED", "com", "dubai-", "IL.0,5_IM1520", 6
+    ),
     GlassdoorLocation("Mumbai", "India", "INR", "co.in", "mumbai-", "IL.0,6_IM1100", 7),
 ]
 
@@ -99,7 +125,9 @@ def _build_url(loc: GlassdoorLocation, role_slug: str, role_slug_len: int) -> st
         full_slug = f"{loc.city_slug}{role_slug}"
         ko_start = loc.city_slug_len
         ko_end = loc.city_slug_len + role_slug_len
-        return f"{base}/{full_slug}-salary-SRCH_{loc.il_param}_KO{ko_start},{ko_end}.htm"
+        return (
+            f"{base}/{full_slug}-salary-SRCH_{loc.il_param}_KO{ko_start},{ko_end}.htm"
+        )
 
     return f"{base}/{role_slug}-salary-SRCH_KO0,{role_slug_len}.htm"
 
@@ -146,7 +174,11 @@ def _is_valid_salary_page(html: str) -> bool:
         return False
 
     marker_count = sum(1 for marker in VALID_PAGE_MARKERS if marker in normalized)
-    has_salary_number = bool(re.search(r"(?:[\$£€₹]\s?[\d,]+|\bAED\s+[\d,]+|\bAUD\s+[\d,]+)", text, re.IGNORECASE))
+    has_salary_number = bool(
+        re.search(
+            r"(?:[\$£€₹]\s?[\d,]+|\bAED\s+[\d,]+|\bAUD\s+[\d,]+)", text, re.IGNORECASE
+        )
+    )
     return marker_count >= 2 and has_salary_number
 
 
@@ -184,10 +216,16 @@ def _parse_salary_page(html: str, location: GlassdoorLocation) -> SalaryPageData
 
     return SalaryPageData(
         salary_median=salary_median,
-        salary_p25=_parse_currency_amount(range_match.group(1)) if range_match else None,
-        salary_p75=_parse_currency_amount(range_match.group(2)) if range_match else None,
+        salary_p25=_parse_currency_amount(range_match.group(1))
+        if range_match
+        else None,
+        salary_p75=_parse_currency_amount(range_match.group(2))
+        if range_match
+        else None,
         salary_p90=_parse_currency_amount(p90_match.group(1)) if p90_match else None,
-        sample_size=int(sample_match.group(1).replace(",", "")) if sample_match else None,
+        sample_size=int(sample_match.group(1).replace(",", ""))
+        if sample_match
+        else None,
         currency=_detect_currency(text, location),
     )
 
@@ -265,7 +303,14 @@ class GlassdoorSalaryRun:
             for location in LOCATIONS:
                 url = _build_url(location, role_slug, role_slug_len)
                 done += 1
-                logger.info("[%s/%s] %s | %s -> %s", done, total, role_category, location.display_name, url)
+                logger.info(
+                    "[%s/%s] %s | %s -> %s",
+                    done,
+                    total,
+                    role_category,
+                    location.display_name,
+                    url,
+                )
 
                 try:
                     response = self.session.get(url, timeout=15)
@@ -273,7 +318,11 @@ class GlassdoorSalaryRun:
                         logger.warning("Blocked by Glassdoor (403): %s", url)
                         continue
                     if response.status_code != 200:
-                        logger.warning("Unexpected HTTP status %s for %s", response.status_code, url)
+                        logger.warning(
+                            "Unexpected HTTP status %s for %s",
+                            response.status_code,
+                            url,
+                        )
                         continue
                     if not _is_valid_salary_page(response.text):
                         logger.warning("HTTP 200 but not a valid salary page: %s", url)
@@ -281,10 +330,14 @@ class GlassdoorSalaryRun:
 
                     salary_data = _parse_salary_page(response.text, location)
                     if salary_data is None:
-                        logger.warning("Valid salary page but no parseable salary data: %s", url)
+                        logger.warning(
+                            "Valid salary page but no parseable salary data: %s", url
+                        )
                         continue
 
-                    self.repo.upsert(self.scraped_date, role_category, location, salary_data, url)
+                    self.repo.upsert(
+                        self.scraped_date, role_category, location, salary_data, url
+                    )
                     logger.info(
                         "Stored salary benchmark: currency=%s median=%.0f p25=%s p75=%s n=%s",
                         salary_data.currency,
