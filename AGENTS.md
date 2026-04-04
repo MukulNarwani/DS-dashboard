@@ -40,7 +40,7 @@
 
 ## Planning With `TODO.md`
 - `TODO.md` is the shared working plan between the user and the agent.
-- For substantial work, write the plan in `TODO.md` before implementation starts.
+- For substantial work, ask to write the plan in `TODO.md` before implementation starts.
 - Keep tasks concise, concrete, and checkable.
 - Update `TODO.md` as work progresses to reflect completion, scope changes, blockers, and relevant next steps.
 - Small trivial changes may skip `TODO.md`, but anything multi-step should be tracked there.
