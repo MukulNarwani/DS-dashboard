@@ -2,8 +2,8 @@ import sqlite3
 
 import pytest
 
-from db import Database
-from salary_scraper import (
+from src.db import Database
+from src.scrapers.salary_scraper import (
     GlassdoorLocation,
     GlassdoorSalaryRepository,
     SalaryPageData,

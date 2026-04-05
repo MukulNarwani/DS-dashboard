@@ -3,8 +3,8 @@ from pathlib import Path
 import pytest
 from bs4 import BeautifulSoup
 
-from db import Database
-from qol_scraper import CoLScraper, NumbeoScraper
+from src.db import Database
+from src.scrapers.qol_scraper import CoLScraper, NumbeoScraper
 
 
 def _parse_html(html: str) -> BeautifulSoup:
@@ -118,7 +118,7 @@ def test_numbeo_scraper_uses_get(monkeypatch: pytest.MonkeyPatch) -> None:
         called["timeout"] = timeout
         return DummyResponse()
 
-    monkeypatch.setattr("qol_scraper.requests.get", fake_get)
+    monkeypatch.setattr("src.scrapers.qol_scraper.requests.get", fake_get)
 
     scraper = NumbeoScraper("London")
 
@@ -141,7 +141,7 @@ def test_numbeo_scraper_raises_when_currency_is_missing(
     def fake_get(url: str, timeout: int) -> DummyResponse:
         return DummyResponse()
 
-    monkeypatch.setattr("qol_scraper.requests.get", fake_get)
+    monkeypatch.setattr("src.scrapers.qol_scraper.requests.get", fake_get)
 
     with pytest.raises(ValueError, match="Currency selector not found"):
         NumbeoScraper("London")

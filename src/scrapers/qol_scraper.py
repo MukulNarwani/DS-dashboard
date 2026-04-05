@@ -4,8 +4,8 @@ import requests
 from bs4 import BeautifulSoup
 from rich.pretty import pprint
 
-from db import CostOfLivingRepository, Database
-from fx import get_fx_rate
+from src.db import CostOfLivingRepository, Database
+from src.scrapers.fx_scraper import get_fx_rate
 
 
 class NumbeoScraper:

@@ -9,8 +9,8 @@ from typing import Any
 
 from bs4 import BeautifulSoup
 
-from db import Database
-from salary_scraper import (
+from src.db import Database
+from src.scrapers.salary_scraper import (
     LOCATIONS,
     ROLES,
     GlassdoorLocation,
@@ -19,6 +19,9 @@ from salary_scraper import (
 )
 
 logger = logging.getLogger(__name__)
+DEFAULT_INPUT_DIR = (
+    Path(__file__).resolve().parent.parent / "glassdoor_offline_salaries"
+)
 
 SOURCE_URL_PATTERN = re.compile(r'"untranslatedUrl":"([^"]+)"')
 FAQ_SAMPLE_SIZE_PATTERN = re.compile(
@@ -236,9 +239,7 @@ def parse_offline_salary_file(path: Path) -> OfflineSalaryRecord:
 
 
 class OfflineGlassdoorSalaryRun:
-    def __init__(
-        self, db: Database, input_dir: str | Path = "glassdoor_offline_salaries"
-    ):
+    def __init__(self, db: Database, input_dir: str | Path = DEFAULT_INPUT_DIR):
         self.repo = GlassdoorSalaryRepository(db)
         self.input_dir = Path(input_dir)
 
@@ -281,7 +282,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--input-dir",
-        default="glassdoor_offline_salaries",
+        default=str(DEFAULT_INPUT_DIR),
         help="Directory containing saved Glassdoor salary HTML files.",
     )
     parser.add_argument(

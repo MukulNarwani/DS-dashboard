@@ -8,7 +8,7 @@ from datetime import date
 import requests
 from bs4 import BeautifulSoup
 
-from db import Database
+from src.db import Database
 
 logger = logging.getLogger(__name__)
 

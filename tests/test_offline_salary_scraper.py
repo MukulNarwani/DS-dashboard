@@ -3,8 +3,8 @@ from pathlib import Path
 
 import pytest
 
-from db import Database
-from offline_salary_scraper import (
+from src.db import Database
+from src.scrapers.offline_salary_scraper import (
     OfflineGlassdoorSalaryRun,
     parse_offline_salary_file,
 )

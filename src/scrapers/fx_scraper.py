@@ -2,7 +2,7 @@ import requests
 from datetime import date
 from typing import Optional
 
-from db import Database
+from src.db import Database
 
 INTERVAL_TO_ANNUAL = {
     "hourly": 52 * 40,  # 2080 hrs

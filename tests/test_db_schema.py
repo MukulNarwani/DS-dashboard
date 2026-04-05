@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from db import CostOfLivingRepository, Database
+from src.db import CostOfLivingRepository, Database
 
 
 def test_initialize_creates_expected_schema_and_removes_stale_tables(
