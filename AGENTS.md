@@ -31,12 +31,14 @@
 - Incorporate reviewer feedback before proceeding.
 - When well scoped milestone is reached run the below commit process.
 
-### Pre-commit checks
-- Before committing:
-  - Run `uvx ruff check`
-  - Run `uvx ruff format --check`
-  - Run `make test`
-- If checks fail, fix issues and re-run before committing.
+### Checks pipeline
+- Run `uvx ruff check`
+- Run `uvx ruff format --check`
+- Run `make test`
+- If checks fail, fix issues and re-run before continuing.
+
+### Commit pipeline 
+- Run checks pipeline. Ensure it is correct.
 - Use `$commit-message` skill to generate a commit message.
 - Never commit to main. Always create a branch, or switch to an appropriate branch.
 
