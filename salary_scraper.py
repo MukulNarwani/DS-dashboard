@@ -236,6 +236,42 @@ class GlassdoorSalaryRepository:
     def __init__(self, database: Database):
         self.database = database
 
+    def _resolve_location_ids(
+        self, conn, location: GlassdoorLocation
+    ) -> tuple[int, int | None, str]:
+        conn.execute(
+            """
+            INSERT INTO countries (name)
+            VALUES (?)
+            ON CONFLICT(name) DO NOTHING
+            """,
+            (location.country,),
+        )
+        country_id = conn.execute(
+            "SELECT id FROM countries WHERE name = ?",
+            (location.country,),
+        ).fetchone()["id"]
+
+        is_city_level = location.display_name != location.country or bool(
+            location.city_slug or location.il_param
+        )
+        if not is_city_level:
+            return country_id, None, "country"
+
+        conn.execute(
+            """
+            INSERT INTO cities (name, country_id)
+            VALUES (?, ?)
+            ON CONFLICT(name, country_id) DO NOTHING
+            """,
+            (location.display_name, country_id),
+        )
+        city_id = conn.execute(
+            "SELECT id FROM cities WHERE name = ? AND country_id = ?",
+            (location.display_name, country_id),
+        ).fetchone()["id"]
+        return country_id, city_id, "city"
+
     def upsert(
         self,
         scraped_date: str,
@@ -245,15 +281,24 @@ class GlassdoorSalaryRepository:
         url: str,
     ) -> None:
         with self.database._get_connection() as conn:
+            country_id, city_id, location_granularity = self._resolve_location_ids(
+                conn, location
+            )
             conn.execute(
                 """
                 INSERT INTO salary_benchmarks (
                     scraped_date, role_category, location_name, location_country,
+                    country_id, city_id, location_granularity,
                     salary_median, salary_p25, salary_p75, salary_p90,
                     currency, sample_size, source, scraped_url
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(scraped_date, role_category, location_name) DO UPDATE SET
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(
+                    scraped_date, role_category, location_name, location_country, location_granularity
+                ) DO UPDATE SET
                     location_country = excluded.location_country,
+                    country_id = excluded.country_id,
+                    city_id = excluded.city_id,
+                    location_granularity = excluded.location_granularity,
                     salary_median = excluded.salary_median,
                     salary_p25 = excluded.salary_p25,
                     salary_p75 = excluded.salary_p75,
@@ -268,6 +313,9 @@ class GlassdoorSalaryRepository:
                     role_category,
                     location.display_name,
                     location.country,
+                    country_id,
+                    city_id,
+                    location_granularity,
                     salary_data.salary_median,
                     salary_data.salary_p25,
                     salary_data.salary_p75,

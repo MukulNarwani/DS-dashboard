@@ -47,7 +47,16 @@ def test_repository_upsert_uses_initialized_schema(
     with database._get_connection() as connection:
         row = connection.execute(
             """
-            SELECT scraped_date, role_category, location_name, location_country, currency, salary_median
+            SELECT
+                scraped_date,
+                role_category,
+                location_name,
+                location_country,
+                country_id,
+                city_id,
+                location_granularity,
+                currency,
+                salary_median
             FROM salary_benchmarks
             """
         ).fetchone()
@@ -57,6 +66,9 @@ def test_repository_upsert_uses_initialized_schema(
         "role_category": "data_scientist",
         "location_name": "London",
         "location_country": "United Kingdom",
+        "country_id": 1,
+        "city_id": 1,
+        "location_granularity": "city",
         "currency": "GBP",
         "salary_median": 61098.0,
     }
@@ -78,6 +90,104 @@ def test_schema_requires_scraped_date_for_raw_benchmarks(
                 """,
                 ("data_scientist", "London", "United Kingdom", 61098.0, "GBP"),
             )
+
+
+def test_repository_upsert_marks_country_level_salary_rows(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    database = Database(str(tmp_path / "salary.db")).initialize()
+    repository = GlassdoorSalaryRepository(database)
+    location = _location("USD", "United States", "United States")
+    salary_data = SalaryPageData(
+        salary_median=154515.0,
+        salary_p25=120000.0,
+        salary_p75=190000.0,
+        salary_p90=240000.0,
+        sample_size=300,
+        currency="USD",
+    )
+
+    repository.upsert(
+        "2026-04-02", "data_scientist", location, salary_data, "https://example.com"
+    )
+
+    with database._get_connection() as connection:
+        row = connection.execute(
+            """
+            SELECT country_id, city_id, location_granularity
+            FROM salary_benchmarks
+            """
+        ).fetchone()
+
+    assert row == {
+        "country_id": 1,
+        "city_id": None,
+        "location_granularity": "country",
+    }
+
+
+def test_repository_upsert_allows_same_name_country_and_city_rows(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    database = Database(str(tmp_path / "salary.db")).initialize()
+    repository = GlassdoorSalaryRepository(database)
+    country_level = _location("SGD", "Singapore", "Singapore")
+    city_level = GlassdoorLocation(
+        display_name="Singapore",
+        country="Singapore",
+        currency="SGD",
+        subdomain="example.com",
+        city_slug="singapore-",
+        il_param="IL.0,9_IM1123",
+        city_slug_len=10,
+    )
+    salary_data = SalaryPageData(
+        salary_median=100000.0,
+        salary_p25=80000.0,
+        salary_p75=120000.0,
+        salary_p90=150000.0,
+        sample_size=100,
+        currency="SGD",
+    )
+
+    repository.upsert(
+        "2026-04-02",
+        "data_scientist",
+        country_level,
+        salary_data,
+        "https://example.com/country",
+    )
+    repository.upsert(
+        "2026-04-02",
+        "data_scientist",
+        city_level,
+        salary_data,
+        "https://example.com/city",
+    )
+
+    with database._get_connection() as connection:
+        rows = connection.execute(
+            """
+            SELECT location_name, location_country, location_granularity
+            FROM salary_benchmarks
+            ORDER BY location_granularity
+            """
+        ).fetchall()
+
+    assert rows == [
+        {
+            "location_name": "Singapore",
+            "location_country": "Singapore",
+            "location_granularity": "city",
+        },
+        {
+            "location_name": "Singapore",
+            "location_country": "Singapore",
+            "location_granularity": "country",
+        },
+    ]
 
 
 @pytest.mark.parametrize(

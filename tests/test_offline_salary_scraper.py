@@ -172,7 +172,17 @@ def test_offline_run_imports_valid_files_and_skips_bad_ones(
     with database._get_connection() as connection:
         row = connection.execute(
             """
-            SELECT scraped_date, role_category, location_name, location_country, salary_median, currency, sample_size
+            SELECT
+                scraped_date,
+                role_category,
+                location_name,
+                location_country,
+                country_id,
+                city_id,
+                location_granularity,
+                salary_median,
+                currency,
+                sample_size
             FROM salary_benchmarks
             """
         ).fetchone()
@@ -182,6 +192,9 @@ def test_offline_run_imports_valid_files_and_skips_bad_ones(
         "role_category": "data_scientist",
         "location_name": "London",
         "location_country": "United Kingdom",
+        "country_id": 1,
+        "city_id": 1,
+        "location_granularity": "city",
         "salary_median": 61096.0,
         "currency": "GBP",
         "sample_size": 5508,

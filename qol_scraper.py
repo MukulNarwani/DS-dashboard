@@ -156,7 +156,7 @@ class City:
         country_id, city_id = self.db.upsert_location(
             city_name=self.city,
             country_name=self.country,
-            url_tail=self.url_tail,
+            numbeo_slug=self.url_tail,
         )
         for category, items in self.cost_table.items():
             for item_name, price, (price_min, price_max) in items:
@@ -168,6 +168,7 @@ class City:
                     currency=self.currency,
                     price_min=price_min,
                     price_max=price_max,
+                    snapshot_date=None,
                 )
 
     def read(self) -> None:
@@ -176,11 +177,3 @@ class City:
         for row in data:
             grouped.setdefault(row["category"], []).append(row)
         pprint(grouped.keys())
-
-
-if __name__ == "__main__":
-    db = Database().initialize()
-    city = City("United Kingdom", "London", "London", db)
-    print(city.currency)
-    city.save()
-    city.read()

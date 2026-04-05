@@ -163,3 +163,4 @@ def test_database_initialize_is_cwd_independent(
 
     assert "countries" in tables
     assert "cities" in tables
+    assert "job_postings" not in tables

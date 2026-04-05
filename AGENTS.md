@@ -29,6 +29,7 @@
 ### Review & completion
 - When a feature is complete or a milestone is reached, ask to spawn reviewer subagent for a final quality gate.
 - Incorporate reviewer feedback before proceeding.
+- When well scoped milestone is reached run the below commit process.
 
 ### Pre-commit checks
 - Before committing:
@@ -37,6 +38,7 @@
   - Run `make test`
 - If checks fail, fix issues and re-run before committing.
 - Use `$commit-message` skill to generate a commit message.
+- Never commit to main. Always create a branch, or switch to an appropriate branch.
 
 ## Planning With `TODO.md`
 - `TODO.md` is the shared working plan between the user and the agent.
